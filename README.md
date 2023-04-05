@@ -28,7 +28,7 @@ https://thepihut.com/products/raspberry-pi-pico-w
 * BL to GP20
 * GND to any ground pin
 
-### UltraSonic Wiring
+## UltraSonic Wiring
 * Trigger to GP4
 * Echo to GP3
 * GND to any ground pin
