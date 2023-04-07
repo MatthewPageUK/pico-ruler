@@ -8,6 +8,8 @@ A handy frame mounted ultrasonic sensor, Raspberry Pi Pico and round lcd display
 
 ![DSC_0010](https://user-images.githubusercontent.com/46349796/230227414-c6a0360c-aed3-4155-b580-42e38f055e3f.jpg)
 
+![image](https://user-images.githubusercontent.com/46349796/230668102-a339d188-ad28-4a92-b607-a89fb21a06e7.png)
+
 ### Hardare requirements:
 * Raspberry Pi Pico-W
 * 1.3" SPI Round LCD Screen (240x240)
