@@ -6,100 +6,114 @@
 /_____/_/____/\__/\__,_/_/ /_/\___/\___/    /_/  \____/   \____/_.___/_/ /\___/\___/\__/
                                                                     /___/
 
- Raspberry Pi Pico-W ultrasonic distance meter.
- Displays distance to object in cm and inches.
+Raspberry Pi Pico-W ultrasonic distance meter.
+Displays distance to object in cm and inches.
 
- Firmware requirements:
+Firmware requirements:
     Micropython with Pimoroni Picographics library
 
- Hardare requirements:
+Hardare requirements:
     Raspberry Pi Pico-W
     1.3" SPI Round LCD Screen (240x240)
     Ultrasonic sensor (HC-SR04)
     10 x M2 x 4mm screws
 
- Default screen wiring:
+Default screen wiring:
     CS to GP17
     SCK to GP18
     MOSI to GP19
     DC to GP16
     BL to GP20
 
- Ultrasonic wiring:
+Ultrasonic wiring:
     Trigger to GP4
     Echo to GP3
     GND to any ground pin
     VCC to 3.5v out
 
- By           - Matthew Page
- Credit       - Everyone who came before and wrote a how to guide
- Version      - 0.1
- Release date - 5th April 2023
+By           - Matthew Page
+Credit       - Everyone who came before and wrote a how to guide
+Version      - 0.1
+Release date - 5th April 2023
 """
 from machine import Pin
 import utime
 from picographics import PicoGraphics, DISPLAY_ROUND_LCD_240X240, PEN_RGB565
-import jpegdec
+from helper import Distance
+
+# Choose a UI
+
+#from ui_default import UiDefault as UI
+from ui_homer import UiHomer as UI
+#from ui_dial import UiDial as UI
+#from ui_flip import UiFlip as UI
+#from ui_trek import UiTrek as UI
+#from ui_roman import UiRoman as UI
+#from ui_tape import UiTape as UI
+#from ui_cyberpunk import UiCyberpunk as UI
 
 # Setup the display
 display = PicoGraphics(display=DISPLAY_ROUND_LCD_240X240, pen_type=PEN_RGB565)
 
-WIDTH = display.get_bounds()[0]     # Screen width
-HEIGHT = display.get_bounds()[1]    # Screen height
-MIDX = int(WIDTH/2)                 # Middle of the screen
-MIDY = int(WIDTH/2)                 # Middle of the screen
-BG = display.create_pen(90, 25, 70)
-GREEN = display.create_pen(50, 255, 50)
+SENSOR_TRIGGER_PIN = 4              # Trigger pin for the ultrasonic sensor
+SENSOR_ECHO_PIN = 3                 # Echo pin for the ultrasonic sensor
 
-# Setup the ultrasonic sensor pins
-trigger = Pin(4, Pin.OUT)
-echo = Pin(3, Pin.IN)
+class UltrasonicSensor:
+    """Class for the ultrasonic sensor
+        trigger - The trigger pin
+        echo - The echo pin
+    """
+    # Speed of sound in meters per second
+    speed_of_sound_mps = 343.2
 
-# Create a new JPEG decoder for our PicoGraphics
-j = jpegdec.JPEG(display)
+    # Speed of sound in cm per microsecond
+    speed_of_sound_cm_per_us = speed_of_sound_mps / 10000
 
-# Open the JPEG file
-j.open_file("back.jpg")
+    # Last distance measured
+    distance = None
+
+    def __init__(self, trigger, echo):
+        """Initialise the sensor
+            trigger - The trigger pin
+            echo - The echo pin
+        """
+        self.trigger = Pin(trigger, Pin.OUT)
+        self.echo = Pin(echo, Pin.IN)
+
+    def measure(self) -> Distance:
+        """Measure the distance to an object"""
+        self.trigger.low()
+        utime.sleep_us(2)
+        self.trigger.high()
+        utime.sleep_us(5)
+        self.trigger.low()
+
+        while self.echo.value() == 0:
+            signaloff = utime.ticks_us()
+        while self.echo.value() == 1:
+            signalon = utime.ticks_us()
+
+        timepassed = signalon - signaloff
+        self.distance = Distance((timepassed * self.speed_of_sound_cm_per_us) / 2)
+
+        return self.distance
+
+# Main Program
+
+# Create a new sensor
+sensor = UltrasonicSensor(SENSOR_TRIGGER_PIN, SENSOR_ECHO_PIN)
+
+# Create a new UI
+ui = UI(display)
 
 while True:
 
-    # Ping
-    trigger.low()
-    utime.sleep_us(2)
-    trigger.high()
-    utime.sleep_us(5)
-    trigger.low()
+    # Measure the distance
+    distance = sensor.measure()
+    print("The distance from the object is {} mm".format(distance.getMm()))
 
-    # Wait for echo
-    while echo.value() == 0:
-        signaloff = utime.ticks_us()
-    while echo.value() == 1:
-        signalon = utime.ticks_us()
+    # Draw the UI
+    ui.draw(distance)
 
-    # Time and distance
-    timepassed = signalon - signaloff
-    distance = (timepassed * 0.0343) / 2
-
-    print("The distance from object is ",distance,"cm")
-
-    # Decode the JPEG
-    j.decode(0, 0, jpegdec.JPEG_SCALE_FULL, dither=True)
-
-    display.set_pen(GREEN)
-
-    # Display the distance in cm
-    text = "{distance:0.2f}".format(distance=distance)
-    twidth = display.measure_text(text, 3)
-    xpos = int((WIDTH - twidth) / 2)
-    display.text(text, xpos, 90, 200, 3)
-
-    # Display the distance in inches
-    text = "{distance:0.2f}".format(distance=distance/2.54)
-    twidth = display.measure_text(text, 3)
-    xpos = int((WIDTH - twidth) / 2)
-    display.text(text, xpos, 133, 200, 3)
-
-    # Update the display
-    display.update()
-
+    # Wait a second
     utime.sleep(1)

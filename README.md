@@ -4,6 +4,7 @@ A handy frame mounted ultrasonic sensor, Raspberry Pi Pico and round lcd display
 
 ### Latest
 * 5 Apr 2023 - Genesis
+* 7 Apr 2023 - Added some new UIs
 
 ![DSC_0010](https://user-images.githubusercontent.com/46349796/230227414-c6a0360c-aed3-4155-b580-42e38f055e3f.jpg)
 
